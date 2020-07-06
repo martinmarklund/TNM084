@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Controller : MonoBehaviour
 {
-    public GameObject gameObject;
+    public new GameObject gameObject;
     public float rotationSpeed = 25.0f;
 
     void Update()

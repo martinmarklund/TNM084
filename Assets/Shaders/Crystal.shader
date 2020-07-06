@@ -2,14 +2,19 @@
 {
     Properties
     {
-        _CellDensity ("Cell Density", Range (1.0, 5.0)) = 1.5
+        _CellDensity ("Cell Density", Range (2.0, 5.0)) = 1.5
         _Strength("Displacement Strength", Range (0.0, 2.0)) = 1.0
+        _Jitter("Jitter", Range(0.0, 1.5)) = 1.0
         _Color("Lower colour", Color) = (1, 0, 0, 1)
-        _Color2("upper colour", Color) = (0, 1, 0, 1)
-        _Jitter("Jitter", Range (0.0, 3.0)) = 1.0
+        _Transparency("Transparency", Range(0.0, 0.03)) = 0.0
     }
     SubShader
     {
+        Tags {"Queue" = "Transparent" "RenderType" = "Transparent"}
+
+        
+        Blend SrcAlpha OneMinusSrcAlpha
+
         Pass
         {
             CGPROGRAM
@@ -25,7 +30,9 @@
             float _Strength;
             fixed4 _Color;
             fixed4 _Color2;
+            float _Transparency;
             float _Jitter;
+            float _minDist;
 
             // Stuff that vertex passes to fragment
             struct v2f {
@@ -34,6 +41,8 @@
                 float4 object_vertex : TEXCOORD1;   // Saved object space position of vertex, used in frag
                 fixed4 color : COLOR0;
             };
+
+
 
             v2f vert(appdata_full v)
             {                
@@ -45,7 +54,7 @@
 
                 // Displacement stuff
                 float2 F = cellular(v.vertex.xyz * _CellDensity, _Jitter);
-                float noise = F.y - F.x;
+                float noise = (F.y - F.x);
                 v.vertex.xyz += (v.normal.xyz * noise) * _Strength;
                 
                 o.vertex = UnityObjectToClipPos(v.vertex);
@@ -63,9 +72,10 @@
 
                 // 3D NOISE
                 float2 F = cellular(i.object_vertex.xyz, _Jitter);
-                float n = smoothstep(0.0, 1.0,F.y-F.x);
+                float n = saturate(F.y-F.x);
 
-                fixed4 color = lerp(_Color,_Color2,n) * n;
+                fixed4 color = _Color * n;
+                color.a = 1.0 - smoothstep(0.0,0.05,_Transparency * n);
                 return color;
             }
 
